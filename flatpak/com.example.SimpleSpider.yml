@@ -1,0 +1,25 @@
+app-id: com.example.SimpleSpider
+runtime: org.freedesktop.Platform
+runtime-version: "24.08"
+sdk: org.freedesktop.Sdk
+command: simple-spider-solitaire
+finish-args:
+  - --share=network
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+modules:
+  - name: simple-spider-solitaire
+    buildsystem: simple
+    build-commands:
+      - npm ci --offline || npm ci
+      - npm run build
+      - install -Dm755 node_modules/.bin/electron /app/bin/simple-spider-solitaire
+      - cp -r dist /app/dist
+      - cp -r dist-electron /app/dist-electron
+      - cp package.json /app/package.json
+      - install -Dm644 flatpak/com.example.SimpleSpider.desktop /app/share/applications/com.example.SimpleSpider.desktop
+      - install -Dm644 flatpak/com.example.SimpleSpider.metainfo.xml /app/share/metainfo/com.example.SimpleSpider.metainfo.xml
+    sources:
+      - type: dir
+        path: ..

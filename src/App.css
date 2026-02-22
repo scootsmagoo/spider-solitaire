@@ -1,0 +1,145 @@
+.app-shell {
+  width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.top-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.top-bar h1 {
+  font-size: 2rem;
+  margin: 0.5rem 0;
+}
+
+.meta {
+  display: flex;
+  gap: 1rem;
+  font-weight: 600;
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+}
+
+.board {
+  background: #0d5f42;
+  border-radius: 14px;
+  padding: 0.75rem;
+}
+
+.board-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.4rem;
+  min-height: 640px;
+}
+
+.column {
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 0.3rem;
+  min-height: 620px;
+}
+
+.column.hint-target {
+  border-color: #fef08a;
+}
+
+.card {
+  width: 100%;
+  height: 90px;
+  border-radius: 10px;
+  margin-top: -62px;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.5rem;
+  box-sizing: border-box;
+  font-weight: 900;
+}
+
+.card:first-child {
+  margin-top: 0;
+}
+
+.card .rank {
+  font-size: 2rem;
+}
+
+.card .suit {
+  font-size: 2.2rem;
+}
+
+.card-back {
+  border: 2px solid #1e293b;
+}
+
+.hint-source {
+  outline: 3px solid #fde047;
+}
+
+.settings-panel,
+.stats-panel {
+  background: #1f2937;
+  border-radius: 10px;
+  padding: 0.8rem;
+  margin-bottom: 0.7rem;
+}
+
+.settings-panel h2,
+.stats-panel h2 {
+  margin-top: 0;
+}
+
+.settings-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+  font-weight: 600;
+}
+
+.settings-panel .toggle {
+  flex-direction: row;
+  align-items: center;
+}
+
+.hint-message {
+  min-height: 1.5rem;
+  font-weight: 700;
+}
+
+.high-contrast .board {
+  background: #00380f;
+}
+
+.high-contrast .column {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.reduced-motion * {
+  transition: none !important;
+  animation: none !important;
+}

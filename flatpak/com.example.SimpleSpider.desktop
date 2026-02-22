@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Simple Spider Solitaire
+Comment=Accessible Spider Solitaire
+Exec=simple-spider-solitaire
+Icon=com.example.SimpleSpider
+Categories=Game;CardGame;
+Terminal=false

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.example.SimpleSpider</id>
+  <name>Simple Spider Solitaire</name>
+  <summary>Accessible Spider Solitaire for low-vision players</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Simple Spider Solitaire includes low-vision-friendly deck themes, high contrast controls,
+      scalable cards, reduced motion, and browser plus desktop workflows.
+    </p>
+  </description>
+  <launchable type="desktop-id">com.example.SimpleSpider.desktop</launchable>
+</component>
