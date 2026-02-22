@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
-import { applyMove, canDealFromStock, createGame, dealFromStock } from './game/engine'
+import { applyMove, canDealFromStock, canMove, createGame, dealFromStock } from './game/engine'
 import { bestHint } from './game/hints'
 import type { GameState, SpiderMode } from './game/types'
 import { getStorage, isElectronRuntime } from './platform/electron'
@@ -117,7 +117,15 @@ function App() {
   }
 
   function moveCards(fromColumn: number, cardIndex: number, toColumn: number): void {
-    const next = applyMove(game, { fromColumn, cardIndex, toColumn })
+    const step = { fromColumn, cardIndex, toColumn }
+    if (!canMove(game, step)) {
+      setHintMessage(
+        'Invalid move: move a same-suit descending stack onto a card that is one rank higher, or onto an empty column.',
+      )
+      return
+    }
+
+    const next = applyMove(game, step)
     if (next !== game) {
       pushSnapshot(game)
       setGame(next)
