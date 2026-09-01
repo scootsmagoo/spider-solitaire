@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { canMove, cardLabel, isMovableSequence } from '../game/engine'
 import type { Card, CardRef, GameState, HintMove } from '../game/types'
 import type { DeckTheme } from '../themes/lowVisionDeck'
@@ -35,6 +36,8 @@ interface DragTracking {
   offsetX: number
   offsetY: number
   width: number
+  /** Effective CSS scale of the board (the app shell may be transform-scaled). */
+  scale: number
   active: boolean
   lastX: number
   lastY: number
@@ -43,6 +46,7 @@ interface DragTracking {
 interface DragRender {
   from: CardRef
   width: number
+  scale: number
 }
 
 const DRAG_THRESHOLD_PX = 6
@@ -97,7 +101,7 @@ export function Board({
     const track = tracking.current
     const layer = layerRef.current
     if (!track || !layer) return
-    layer.style.transform = `translate(${clientX - track.offsetX}px, ${clientY - track.offsetY}px)`
+    layer.style.transform = `translate(${clientX - track.offsetX}px, ${clientY - track.offsetY}px) scale(${track.scale})`
   }
 
   // The drag layer mounts one render after the drag starts; place it where the pointer already is.
@@ -120,6 +124,7 @@ export function Board({
     if (event.button !== 0) return
     if (!isMovableSequence(game.columns[ref.column], ref.cardIndex)) return
     const rect = event.currentTarget.getBoundingClientRect()
+    const width = event.currentTarget.offsetWidth
     tracking.current = {
       from: ref,
       pointerId: event.pointerId,
@@ -127,7 +132,8 @@ export function Board({
       startY: event.clientY,
       offsetX: event.clientX - rect.left,
       offsetY: event.clientY - rect.top,
-      width: rect.width,
+      width,
+      scale: width > 0 ? rect.width / width : 1,
       active: false,
       lastX: event.clientX,
       lastY: event.clientY,
@@ -144,7 +150,7 @@ export function Board({
       const distance = Math.hypot(event.clientX - track.startX, event.clientY - track.startY)
       if (distance < DRAG_THRESHOLD_PX) return
       track.active = true
-      setDrag({ from: track.from, width: track.width })
+      setDrag({ from: track.from, width: track.width, scale: track.scale })
     }
     positionLayer(event.clientX, event.clientY)
     const target = columnAtPoint(event.clientX)
@@ -326,15 +332,18 @@ export function Board({
         })}
       </div>
 
-      {drag && (
-        <div className="drag-layer" ref={layerRef} style={{ width: drag.width }} aria-hidden="true">
-          {dragCards.map((card) => (
-            <div key={card.id} className="card-slot">
-              <CardFace card={card} theme={theme} />
-            </div>
-          ))}
-        </div>
-      )}
+      {drag &&
+        // Portaled to <body>: a transformed ancestor would otherwise re-anchor position: fixed.
+        createPortal(
+          <div className="drag-layer" ref={layerRef} style={{ width: drag.width }} aria-hidden="true">
+            {dragCards.map((card) => (
+              <div key={card.id} className="card-slot">
+                <CardFace card={card} theme={theme} />
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
     </section>
   )
 }
