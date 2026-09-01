@@ -14,6 +14,7 @@ export interface GameState {
   columns: Card[][]
   stock: Card[][]
   completedRuns: number
+  completedBooks: Suit[]
   moves: number
   startedAt: number
   wonAt: number | null

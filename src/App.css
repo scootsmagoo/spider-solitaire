@@ -47,6 +47,45 @@
   font-weight: 700;
 }
 
+.complete-books-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.complete-books-label {
+  font-weight: 700;
+  min-width: 7.5rem;
+}
+
+.complete-books-track {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.book-slot {
+  height: 30px;
+  border-radius: 7px;
+  border: 2px dashed rgba(255, 255, 255, 0.45);
+  background: rgba(15, 23, 42, 0.2);
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.book-slot.complete {
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.88);
+  background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+  color: #991b1b;
+}
+
 .columns {
   display: grid;
   grid-template-columns: repeat(10, 1fr);

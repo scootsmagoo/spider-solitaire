@@ -12,6 +12,8 @@ interface BoardProps {
 }
 
 export function Board({ game, theme, highlight, onMove, onDealStock }: BoardProps) {
+  const totalBooks = 8
+
   return (
     <section className="board" aria-label="Spider Solitaire board">
       <header className="board-header">
@@ -20,6 +22,25 @@ export function Board({ game, theme, highlight, onMove, onDealStock }: BoardProp
           Deal Stock ({game.stock.length})
         </button>
       </header>
+
+      <div className="complete-books-row" aria-label="Complete books">
+        <span className="complete-books-label">Complete Books</span>
+        <div className="complete-books-track">
+          {Array.from({ length: totalBooks }, (_, index) => {
+            const suit = game.completedBooks[index]
+            const complete = Boolean(suit)
+            return (
+              <div
+                key={`book-${index}`}
+                className={`book-slot ${complete ? 'complete' : ''}`}
+                aria-label={complete ? `Book ${index + 1} complete` : `Book ${index + 1} pending`}
+              >
+                {suit ? `K-A ${suitSymbol(suit)}` : ''}
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="columns">
         {game.columns.map((column, columnIndex) => (

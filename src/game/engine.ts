@@ -80,6 +80,7 @@ export function createGame(mode: SpiderMode, random: () => number = Math.random)
     columns,
     stock,
     completedRuns: 0,
+    completedBooks: [],
     moves: 0,
     startedAt: Date.now(),
     wonAt: null,
@@ -132,6 +133,7 @@ function cloneState(state: GameState): GameState {
     ...state,
     columns: state.columns.map((column) => column.map((card) => ({ ...card }))),
     stock: state.stock.map((pile) => pile.map((card) => ({ ...card }))),
+    completedBooks: [...state.completedBooks],
   }
 }
 
@@ -159,6 +161,7 @@ function removeCompletedRuns(state: GameState): void {
     if (complete) {
       column.splice(column.length - 13, 13)
       state.completedRuns += 1
+      state.completedBooks.push(suit)
       exposeTopCardIfNeeded(column)
       if (state.completedRuns === 8 && state.wonAt === null) {
         state.wonAt = Date.now()

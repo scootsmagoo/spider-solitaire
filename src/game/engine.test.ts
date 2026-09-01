@@ -36,6 +36,7 @@ describe('spider engine', () => {
       ],
       stock: [],
       completedRuns: 0,
+      completedBooks: [],
       moves: 0,
       startedAt: 0,
       wonAt: null,

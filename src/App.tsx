@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { applyMove, canDealFromStock, canMove, createGame, dealFromStock } from './game/engine'
 import { bestHint } from './game/hints'
-import type { GameState, SpiderMode } from './game/types'
+import type { GameState, SpiderMode, Suit } from './game/types'
 import { getStorage, isElectronRuntime } from './platform/electron'
 import { Board } from './ui/Board'
 import { type GameSettings, SettingsPanel } from './ui/SettingsPanel'
@@ -33,12 +33,24 @@ const defaultStats: Stats = {
   bestTimeSeconds: null,
 }
 
+function normalizeSavedGame(saved: GameState | null, mode: SpiderMode): GameState {
+  if (!saved) return createGame(mode)
+  if (!Array.isArray(saved.completedBooks)) {
+    const fallbackSuit: Suit = 'spades'
+    return {
+      ...saved,
+      completedBooks: Array.from({ length: saved.completedRuns }, () => fallbackSuit),
+    }
+  }
+  return saved
+}
+
 function App() {
   const storage = getStorage()
   const [mode, setMode] = useState<SpiderMode>(() => storage.get<SpiderMode>(MODE_KEY, 1))
   const [settings, setSettings] = useState<GameSettings>(() => storage.get<GameSettings>(SETTINGS_KEY, defaultSettings))
   const [stats, setStats] = useState<Stats>(() => storage.get<Stats>(STATS_KEY, defaultStats))
-  const [game, setGame] = useState<GameState>(() => storage.get<GameState | null>(GAME_KEY, null) ?? createGame(mode))
+  const [game, setGame] = useState<GameState>(() => normalizeSavedGame(storage.get<GameState | null>(GAME_KEY, null), mode))
   const [history, setHistory] = useState<GameState[]>([])
   const [future, setFuture] = useState<GameState[]>([])
   const [hintMessage, setHintMessage] = useState<string>('')
