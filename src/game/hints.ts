@@ -36,3 +36,31 @@ export function bestHint(state: GameState): HintMove | null {
   if (hints.length === 0) return null
   return hints.sort((a, b) => a.cardIndex - b.cardIndex)[0]
 }
+
+/**
+ * Scores a single destination for a card being moved: same-suit targets are
+ * strongly preferred, and empty columns are used only as a last resort.
+ */
+function scoreDestination(state: GameState, fromColumn: number, cardIndex: number, toColumn: number): number {
+  const moving = state.columns[fromColumn][cardIndex]
+  const target = state.columns[toColumn]
+  if (target.length === 0) return 0
+  const top = target[target.length - 1]
+  return top.suit === moving.suit ? 10 : 2
+}
+
+/** Where a single click on this card should send it, or null if it can't move anywhere. */
+export function bestDestination(state: GameState, fromColumn: number, cardIndex: number): number | null {
+  let best: number | null = null
+  let bestScore = -1
+  for (let toColumn = 0; toColumn < state.columns.length; toColumn += 1) {
+    if (toColumn === fromColumn) continue
+    if (!canMove(state, { fromColumn, cardIndex, toColumn })) continue
+    const score = scoreDestination(state, fromColumn, cardIndex, toColumn)
+    if (score > bestScore) {
+      best = toColumn
+      bestScore = score
+    }
+  }
+  return best
+}

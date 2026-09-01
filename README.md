@@ -11,7 +11,8 @@ It includes:
 - low-vision default deck (large rank/suit symbols, no illustrated face cards)
 - multiple deck themes
 - UI scale, high contrast, alternative suit palette, reduced motion
-- drag-and-drop play, hint button, undo/redo
+- click a card to send it to its best spot (or select-then-click, or drag a whole run), keyboard play, hint button, undo/redo
+- numbered columns and plain-English hints and invalid-move explanations shown on the board
 - autosave, restart/new game, and basic stats (wins/losses/best time)
 
 ## Development

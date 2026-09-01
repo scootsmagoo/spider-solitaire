@@ -20,6 +20,12 @@ export interface GameState {
   wonAt: number | null
 }
 
+/** A face-up card on the board, addressed by position. */
+export interface CardRef {
+  column: number
+  cardIndex: number
+}
+
 export interface MoveStep {
   fromColumn: number
   cardIndex: number

@@ -6,6 +6,8 @@ export interface GameSettings {
   highContrast: boolean
   altPalette: boolean
   reducedMotion: boolean
+  /** Clicking a card sends it straight to its best spot instead of selecting it first. */
+  autoMove: boolean
   deckThemeId: string
 }
 
@@ -56,6 +58,15 @@ export function SettingsPanel({ settings, themes, mode, onModeChange, onChange }
           value={settings.scale}
           onChange={(event) => onChange({ scale: Number(event.target.value) })}
         />
+      </label>
+
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={settings.autoMove}
+          onChange={(event) => onChange({ autoMove: event.target.checked })}
+        />
+        Click a card to move it automatically
       </label>
 
       <label className="toggle">

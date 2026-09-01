@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
-import { applyMove, canDealFromStock, canMove, createGame, dealFromStock } from './game/engine'
-import { bestHint } from './game/hints'
-import type { GameState, SpiderMode, Suit } from './game/types'
+import { applyMove, canDealFromStock, canMove, cardLabel, createGame, dealFromStock, isMovableSequence } from './game/engine'
+import { bestDestination, bestHint } from './game/hints'
+import type { CardRef, GameState, SpiderMode, Suit } from './game/types'
 import { getStorage, isElectronRuntime } from './platform/electron'
-import { Board } from './ui/Board'
+import { Board, type BoardFeedback } from './ui/Board'
 import { type GameSettings, SettingsPanel } from './ui/SettingsPanel'
-import { deckThemes } from './themes/deckThemes'
+import { deckThemes, suitSymbol } from './themes/deckThemes'
 
 interface Stats {
   wins: number
@@ -19,11 +19,14 @@ const GAME_KEY = 'simple-spider-game'
 const STATS_KEY = 'simple-spider-stats'
 const MODE_KEY = 'simple-spider-mode'
 
+const ERROR_FEEDBACK_MS = 4000
+
 const defaultSettings: GameSettings = {
   scale: 1,
   highContrast: false,
   altPalette: false,
   reducedMotion: false,
+  autoMove: true,
   deckThemeId: 'low-vision',
 }
 
@@ -45,15 +48,34 @@ function normalizeSavedGame(saved: GameState | null, mode: SpiderMode): GameStat
   return saved
 }
 
+function describeCard(game: GameState, ref: CardRef): string {
+  const card = game.columns[ref.column][ref.cardIndex]
+  const runLength = game.columns[ref.column].length - ref.cardIndex
+  const name = `${cardLabel(card.rank)}${suitSymbol(card.suit)}`
+  return runLength > 1 ? `the ${name} run` : `the ${name}`
+}
+
+function describeTarget(game: GameState, column: number): string {
+  const target = game.columns[column]
+  if (target.length === 0) return `empty column ${column + 1}`
+  const top = target[target.length - 1]
+  return `the ${cardLabel(top.rank)}${suitSymbol(top.suit)} in column ${column + 1}`
+}
+
 function App() {
   const storage = getStorage()
   const [mode, setMode] = useState<SpiderMode>(() => storage.get<SpiderMode>(MODE_KEY, 1))
-  const [settings, setSettings] = useState<GameSettings>(() => storage.get<GameSettings>(SETTINGS_KEY, defaultSettings))
+  const [settings, setSettings] = useState<GameSettings>(() => ({
+    ...defaultSettings,
+    ...storage.get<Partial<GameSettings>>(SETTINGS_KEY, {}),
+  }))
   const [stats, setStats] = useState<Stats>(() => storage.get<Stats>(STATS_KEY, defaultStats))
   const [game, setGame] = useState<GameState>(() => normalizeSavedGame(storage.get<GameState | null>(GAME_KEY, null), mode))
   const [history, setHistory] = useState<GameState[]>([])
   const [future, setFuture] = useState<GameState[]>([])
-  const [hintMessage, setHintMessage] = useState<string>('')
+  const [selected, setSelected] = useState<CardRef | null>(null)
+  const [hintVisible, setHintVisible] = useState(false)
+  const [feedback, setFeedback] = useState<BoardFeedback | null>(null)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
@@ -80,6 +102,13 @@ function App() {
     storage.set(GAME_KEY, game)
   }, [game, storage])
 
+  // Error feedback fades on its own; hints and win messages stay until the next move.
+  useEffect(() => {
+    if (feedback?.kind !== 'error') return
+    const timer = window.setTimeout(() => setFeedback(null), ERROR_FEEDBACK_MS)
+    return () => window.clearTimeout(timer)
+  }, [feedback])
+
   const activeTheme = useMemo(
     () => deckThemes.find((theme) => theme.id === settings.deckThemeId) ?? deckThemes[0],
     [settings.deckThemeId],
@@ -101,6 +130,10 @@ function App() {
   const hint = useMemo(() => bestHint(game), [game])
   const elapsed = game.wonAt === null ? tick : Math.floor((game.wonAt - game.startedAt) / 1000)
 
+  function say(kind: BoardFeedback['kind'], message: string, card?: CardRef): void {
+    setFeedback({ kind, message, card, nonce: Date.now() })
+  }
+
   function startNewGame(nextMode: SpiderMode, countLoss: boolean): void {
     if (countLoss && game.wonAt === null) {
       setStats((prev) => ({ ...prev, losses: prev.losses + 1 }))
@@ -109,12 +142,20 @@ function App() {
     setGame(createGame(nextMode))
     setHistory([])
     setFuture([])
-    setHintMessage('')
+    setSelected(null)
+    setHintVisible(false)
+    setFeedback(null)
   }
 
-  function pushSnapshot(previous: GameState): void {
-    setHistory((prev) => [...prev, previous])
+  function commit(next: GameState): void {
+    if (next === game) return
+    setHistory((prev) => [...prev, game])
     setFuture([])
+    setGame(next)
+    setSelected(null)
+    setHintVisible(false)
+    setFeedback(null)
+    handleWinTransition(game, next)
   }
 
   function handleWinTransition(previous: GameState, next: GameState): void {
@@ -125,39 +166,85 @@ function App() {
       losses: prev.losses,
       bestTimeSeconds: prev.bestTimeSeconds === null ? elapsedSeconds : Math.min(prev.bestTimeSeconds, elapsedSeconds),
     }))
-    setHintMessage('You won! Start a new game whenever you are ready.')
+    say('win', 'You won! Start a new game whenever you are ready.')
   }
 
-  function moveCards(fromColumn: number, cardIndex: number, toColumn: number): void {
-    const step = { fromColumn, cardIndex, toColumn }
+  function moveCards(from: CardRef, toColumn: number): void {
+    const step = { fromColumn: from.column, cardIndex: from.cardIndex, toColumn }
     if (!canMove(game, step)) {
-      setHintMessage(
-        'Invalid move: move a same-suit descending stack onto a card that is one rank higher, or onto an empty column.',
-      )
+      const moving = game.columns[from.column][from.cardIndex]
+      const reason = !isMovableSequence(game.columns[from.column], from.cardIndex)
+        ? "those cards aren't a same-suit run going down."
+        : `it needs a ${cardLabel(moving.rank + 1)} to land on, and column ${toColumn + 1} has ${describeTarget(game, toColumn).replace(/ in column \d+$/, '')} on top.`
+      say('error', `Can't move ${describeCard(game, from)} there — ${reason}`, from)
+      return
+    }
+    commit(applyMove(game, step))
+  }
+
+  /** Sends the card to its best destination; returns false if it has nowhere to go. */
+  function autoMove(ref: CardRef): boolean {
+    const destination = bestDestination(game, ref.column, ref.cardIndex)
+    if (destination === null) return false
+    moveCards(ref, destination)
+    return true
+  }
+
+  function handleCardClick(ref: CardRef): void {
+    const column = game.columns[ref.column]
+    const movable = isMovableSequence(column, ref.cardIndex)
+
+    if (selected) {
+      if (selected.column === ref.column && selected.cardIndex === ref.cardIndex) {
+        setSelected(null)
+        return
+      }
+      if (canMove(game, { fromColumn: selected.column, cardIndex: selected.cardIndex, toColumn: ref.column })) {
+        moveCards(selected, ref.column)
+        return
+      }
+      if (movable) {
+        setSelected(ref)
+        return
+      }
+      moveCards(selected, ref.column)
       return
     }
 
-    const next = applyMove(game, step)
-    if (next !== game) {
-      pushSnapshot(game)
-      setGame(next)
-      setHintMessage('')
-      handleWinTransition(game, next)
+    if (!movable) {
+      say('error', `${describeCard(game, ref)} can't be picked up — the cards under it aren't a same-suit run.`, ref)
+      return
     }
+    if (settings.autoMove) {
+      if (autoMove(ref)) return
+      say('error', `There's nowhere to move ${describeCard(game, ref)} right now.`, ref)
+      return
+    }
+    setSelected(ref)
+  }
+
+  function handleCardDoubleClick(ref: CardRef): void {
+    if (settings.autoMove) return // the first click already moved it
+    if (!isMovableSequence(game.columns[ref.column], ref.cardIndex)) return
+    if (!autoMove(ref)) say('error', `There's nowhere to move ${describeCard(game, ref)} right now.`, ref)
+  }
+
+  function handleColumnClick(column: number): void {
+    if (!selected) return
+    moveCards(selected, column)
   }
 
   function dealStock(): void {
-    if (!canDealFromStock(game)) {
-      setHintMessage('All columns must have at least one card before dealing from stock.')
+    if (game.stock.length === 0) {
+      say('error', 'There are no deals left.')
       return
     }
-    const next = dealFromStock(game)
-    if (next !== game) {
-      pushSnapshot(game)
-      setGame(next)
-      setHintMessage('')
-      handleWinTransition(game, next)
+    if (!canDealFromStock(game)) {
+      const empty = game.columns.findIndex((column) => column.length === 0)
+      say('error', `Fill empty column ${empty + 1} before dealing — every column needs at least one card.`)
+      return
     }
+    commit(dealFromStock(game))
   }
 
   function undo(): void {
@@ -166,6 +253,9 @@ function App() {
     setHistory((items) => items.slice(0, -1))
     setFuture((items) => [game, ...items])
     setGame(previous)
+    setSelected(null)
+    setHintVisible(false)
+    setFeedback(null)
   }
 
   function redo(): void {
@@ -174,15 +264,44 @@ function App() {
     setFuture(rest)
     setHistory((items) => [...items, game])
     setGame(next)
+    setSelected(null)
+    setHintVisible(false)
+    setFeedback(null)
   }
 
   function showHint(): void {
+    setSelected(null)
     if (!hint) {
-      setHintMessage('No legal moves found.')
+      if (game.stock.length > 0) say('hint', 'No moves left on the board — deal a new row from the stock.')
+      else say('hint', 'No moves left and no deals left. Try Undo, or start a new game.')
       return
     }
-    setHintMessage(`Hint: move from column ${hint.fromColumn + 1} to column ${hint.toColumn + 1}.`)
+    setHintVisible(true)
+    const from = { column: hint.fromColumn, cardIndex: hint.cardIndex }
+    say('hint', `Move ${describeCard(game, from)} from column ${hint.fromColumn + 1} onto ${describeTarget(game, hint.toColumn)}.`)
   }
+
+  useEffect(() => {
+    function onKeyDown(event: globalThis.KeyboardEvent): void {
+      const target = event.target as HTMLElement | null
+      if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
+      const modifier = event.ctrlKey || event.metaKey
+      const key = event.key.toLowerCase()
+      if (modifier && key === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        undo()
+      } else if ((modifier && key === 'z' && event.shiftKey) || (modifier && key === 'y')) {
+        event.preventDefault()
+        redo()
+      } else if (!modifier && key === 'h') {
+        showHint()
+      } else if (!modifier && key === 'd') {
+        dealStock()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
 
   return (
     <main
@@ -217,7 +336,19 @@ function App() {
       </section>
 
       <div className="layout">
-        <Board game={game} theme={shownTheme} highlight={hint} onMove={moveCards} onDealStock={dealStock} />
+        <Board
+          game={game}
+          theme={shownTheme}
+          hint={hintVisible ? hint : null}
+          selected={selected}
+          feedback={feedback}
+          onCardClick={handleCardClick}
+          onCardDoubleClick={handleCardDoubleClick}
+          onColumnClick={handleColumnClick}
+          onDrop={moveCards}
+          onDealStock={dealStock}
+          onEscape={() => setSelected(null)}
+        />
         <aside>
           <SettingsPanel
             settings={settings}
@@ -232,7 +363,11 @@ function App() {
             <p>Losses: {stats.losses}</p>
             <p>Best Time: {stats.bestTimeSeconds === null ? 'N/A' : `${stats.bestTimeSeconds}s`}</p>
           </section>
-          <p className="hint-message">{hintMessage}</p>
+          <section className="keys-panel">
+            <h2>Keys</h2>
+            <p>Arrows move, Enter picks up / drops, Esc cancels</p>
+            <p>H hint · D deal · Ctrl+Z undo · Ctrl+Y redo</p>
+          </section>
         </aside>
       </div>
     </main>

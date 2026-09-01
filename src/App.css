@@ -38,25 +38,62 @@
   background: #0d5f42;
   border-radius: 14px;
   padding: 0.75rem;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.board:focus-visible {
+  box-shadow: 0 0 0 3px #fef08a;
 }
 
 .board-header {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 0.5rem;
   font-weight: 700;
 }
 
-.complete-books-row {
+/* Stock pile: a clickable stack of card backs, one per remaining deal. */
+.stock-pile {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-bottom: 0.6rem;
+  padding: 0.35rem 0.6rem 0.35rem 0.35rem;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
-.complete-books-label {
-  font-weight: 700;
-  min-width: 7.5rem;
+.stock-pile:hover:not(.empty) {
+  border-color: #fef08a;
+}
+
+.stock-pile.empty {
+  border-style: dashed;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: default;
+}
+
+.stock-cards {
+  position: relative;
+  display: block;
+  width: calc(44px + 4 * 5px);
+  height: 58px;
+}
+
+.stock-card {
+  position: absolute;
+  top: 0;
+  width: 44px;
+  height: 58px;
+  border-radius: 6px;
+  border: 2px solid #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .complete-books-track {
@@ -67,7 +104,7 @@
 }
 
 .book-slot {
-  height: 30px;
+  height: 58px;
   border-radius: 7px;
   border: 2px dashed rgba(255, 255, 255, 0.45);
   background: rgba(15, 23, 42, 0.2);
@@ -75,7 +112,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -84,6 +121,33 @@
   border-color: rgba(255, 255, 255, 0.88);
   background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
   color: #991b1b;
+}
+
+/* Message strip under the header: hints, invalid-move reasons, win. */
+.board-banner {
+  min-height: 2.6rem;
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.board-banner.hint {
+  background: #fef08a;
+  color: #1f2937;
+}
+
+.board-banner.error {
+  background: #7f1d1d;
+}
+
+.board-banner.win {
+  background: #fbbf24;
+  color: #1f2937;
 }
 
 .columns {
@@ -101,15 +165,56 @@
   min-height: 620px;
 }
 
+.column-number {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 0.3rem;
+  line-height: 1;
+}
+
 .column.hint-target {
   border-color: #fef08a;
+  background: rgba(254, 240, 138, 0.22);
+}
+
+.column.drop-legal {
+  border-color: #86efac;
+  background: rgba(134, 239, 172, 0.25);
+}
+
+.column.drop-illegal {
+  border-color: #fca5a5;
+}
+
+.column.cursor {
+  border-color: #fff;
+}
+
+/* One stacked entry in a column; overlap is done here so the card face stays simple. */
+.card-slot {
+  display: block;
+  position: relative;
+  touch-action: none;
+}
+
+.card-slot + .card-slot {
+  margin-top: -50px;
+}
+
+.card-slot.movable {
+  cursor: grab;
+}
+
+.card-slot.dragging {
+  visibility: hidden;
 }
 
 .card {
   width: 100%;
   height: 90px;
   border-radius: 10px;
-  margin-top: -50px;
   border: 2px solid rgba(0, 0, 0, 0.45);
   display: block;
   position: relative;
@@ -120,13 +225,10 @@
     0 1px 0 rgba(255, 255, 255, 0.7) inset,
     0 0 0 1px rgba(255, 255, 255, 0.35),
     0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
-.card:first-child {
-  margin-top: 0;
-}
-
-.card + .card {
+.card-slot + .card-slot .card {
   border-top-color: rgba(0, 0, 0, 0.85);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
@@ -155,11 +257,67 @@
   border: 2px solid #1e293b;
 }
 
-.hint-source {
-  outline: 3px solid #fde047;
+.card-slot.selected .card {
+  transform: translateY(-8px);
+  outline: 4px solid #fef08a;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.55);
+}
+
+.card-slot.hint-source .card {
+  outline: 4px solid #fde047;
+  animation: pulse 900ms ease-in-out infinite alternate;
+}
+
+.card-slot.cursor .card {
+  outline: 4px solid #fff;
+}
+
+.card-slot.shake .card {
+  outline: 4px solid #fca5a5;
+  animation: shake 400ms ease;
+}
+
+@keyframes pulse {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+  75% {
+    transform: translateX(-4px);
+  }
+}
+
+/* The run being dragged, following the pointer. */
+.drag-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.5));
+}
+
+.board.is-dragging .card-slot.movable {
+  cursor: grabbing;
 }
 
 .settings-panel,
+.keys-panel,
 .stats-panel {
   background: #1f2937;
   border-radius: 10px;
@@ -168,6 +326,7 @@
 }
 
 .settings-panel h2,
+.keys-panel h2,
 .stats-panel h2 {
   margin-top: 0;
 }
@@ -185,10 +344,6 @@
   align-items: center;
 }
 
-.hint-message {
-  min-height: 1.5rem;
-  font-weight: 700;
-}
 
 .high-contrast .board {
   background: #00380f;
