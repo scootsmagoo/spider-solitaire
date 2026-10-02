@@ -269,10 +269,16 @@
   line-height: 1;
 }
 
-/* Two digits plus the corner suit only just fit in a narrow column. */
+/* Pull the 10 together slightly so it reads as one rank and clears the corner suit. */
 .card .rank-ten {
-  letter-spacing: -0.06em;
-  transform: scaleX(0.8);
+  letter-spacing: -0.05em;
+  transform: scaleX(0.92);
+  transform-origin: left top;
+}
+
+/* A, Q and K are wider than the numerals; narrow them a touch so all ranks look the same size. */
+.card .rank-wide {
+  transform: scaleX(0.88);
   transform-origin: left top;
 }
 

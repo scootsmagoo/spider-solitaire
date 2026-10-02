@@ -63,10 +63,16 @@ function deepestMovable(column: Card[]): number {
   return index
 }
 
+function rankClass(rank: number): string {
+  if (rank === 10) return 'rank rank-ten'
+  if (rank === 1 || rank === 12 || rank === 13) return 'rank rank-wide'
+  return 'rank'
+}
+
 function CardFace({ card, theme, className }: { card: Card; theme: DeckTheme; className?: string }) {
   return (
     <div className={`card ${className ?? ''}`} style={{ background: theme.cardBg, color: theme.cardFg }}>
-      <div className={card.rank === 10 ? 'rank rank-ten' : 'rank'} style={{ color: theme.suitColor[card.suit] }}>
+      <div className={rankClass(card.rank)} style={{ color: theme.suitColor[card.suit] }}>
         {cardLabel(card.rank)}
       </div>
       <div className="corner-suit" style={{ color: theme.suitColor[card.suit] }} aria-hidden="true">
