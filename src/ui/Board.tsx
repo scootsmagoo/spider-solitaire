@@ -65,7 +65,8 @@ function deepestMovable(column: Card[]): number {
 
 function rankClass(rank: number): string {
   if (rank === 10) return 'rank rank-ten'
-  if (rank === 1 || rank === 12 || rank === 13) return 'rank rank-wide'
+  if (rank === 12) return 'rank rank-wide rank-queen'
+  if (rank === 1 || rank === 13) return 'rank rank-wide'
   return 'rank'
 }
 

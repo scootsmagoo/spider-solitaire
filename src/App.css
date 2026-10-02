@@ -255,7 +255,8 @@
   /* Serif with full-height (lining) numerals; Georgia's old-style 3/4/5/7/9 dip below the line. */
   font-family: Charter, "Bitstream Charter", "DejaVu Serif", "Noto Serif", "Times New Roman", serif;
   position: absolute;
-  top: 0.2rem;
+  /* The font leaves ~0.2em of empty space above capitals; pull it up so tails (Q, 9) stay inside the strip. */
+  top: -0.1em;
   left: 0.3rem;
   line-height: 1;
 }
@@ -274,6 +275,11 @@
   letter-spacing: -0.05em;
   transform: scaleX(0.92);
   transform-origin: left top;
+}
+
+/* Iowan's Q tail sweeps out to the right instead of hanging straight down like Charter's. */
+.card .rank-queen {
+  font-family: "Iowan Old Style", Charter, "Bitstream Charter", "DejaVu Serif", "Noto Serif", "Times New Roman", serif;
 }
 
 /* A, Q and K are wider than the numerals; narrow them a touch so all ranks look the same size. */
