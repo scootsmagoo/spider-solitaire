@@ -21,9 +21,9 @@ interface SettingsPanelProps {
 }
 
 /**
- * Rescaling restyles the whole board, so the drag is tracked here and only applied by the
- * native change event, which fires on release (and on each click or arrow key, so those still
- * apply at once). This also kept the thumb steady back when the slider sat inside the scaled area.
+ * Resizing the menu while dragging would move this slider under the pointer, so the drag is
+ * tracked here and only applied by the native change event, which fires on release (and on
+ * each click or arrow key, so those still apply at once).
  */
 function ScaleSlider({ value, onCommit }: { value: number; onCommit: (scale: number) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -43,7 +43,7 @@ function ScaleSlider({ value, onCommit }: { value: number; onCommit: (scale: num
 
   return (
     <label>
-      UI scale ({Math.round(shown * 100)}%)
+      Button & text size ({Math.round(shown * 100)}%)
       <input
         ref={inputRef}
         type="range"

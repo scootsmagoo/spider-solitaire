@@ -321,8 +321,9 @@ function App() {
     <main
       className={`app-shell ${settings.highContrast ? 'high-contrast' : ''} ${settings.reducedMotion ? 'reduced-motion' : ''}`}
     >
-      <div className="app-content" style={{ transform: `scale(${settings.scale})`, transformOrigin: 'top center' }}>
-        <header className="toolbar">
+      <div className="app-content">
+        {/* The size setting enlarges the toolbar and menu; the cards already fill the screen. */}
+        <header className="toolbar" style={{ fontSize: `${settings.scale}rem` }}>
           <h1 className="visually-hidden">Simple Spider Solitaire</h1>
           <div className="controls">
             <button type="button" onClick={() => startNewGame(mode, true)}>
@@ -380,7 +381,7 @@ function App() {
       {menuOpen && (
         <>
           <div className="menu-backdrop" onClick={closeMenu} aria-hidden="true" />
-          <aside id="side-menu" className="side-menu" aria-label="Menu">
+          <aside id="side-menu" className="side-menu" aria-label="Menu" style={{ fontSize: `${settings.scale}rem` }}>
             <div className="side-menu-header">
               <h2>Menu</h2>
               <button type="button" onClick={closeMenu} autoFocus>

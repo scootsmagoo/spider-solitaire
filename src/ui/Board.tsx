@@ -36,7 +36,7 @@ interface DragTracking {
   offsetX: number
   offsetY: number
   width: number
-  /** Effective CSS scale of the board (the app shell may be transform-scaled). */
+  /** Effective CSS scale of the board, in case an ancestor is transform-scaled. */
   scale: number
   active: boolean
   lastX: number
@@ -140,10 +140,7 @@ export function Board({
       const columns = columnsRef.current
       const cards = columns?.querySelector('.column-cards')
       if (!columns || !cards) return
-      const rect = columns.getBoundingClientRect()
-      // The app shell may be transform-scaled (UI scale); work in unscaled CSS pixels.
-      const scale = columns.offsetWidth > 0 ? rect.width / columns.offsetWidth : 1
-      const available = (window.innerHeight - cards.getBoundingClientRect().top) / scale - BOTTOM_GAP_PX
+      const available = window.innerHeight - cards.getBoundingClientRect().top - BOTTOM_GAP_PX
       columns.style.setProperty('--fit-width', `${fitCardWidth(available, longest)}px`)
     }
     fit()
