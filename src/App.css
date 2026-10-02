@@ -1,7 +1,8 @@
 .app-shell {
-  width: 1200px;
+  width: 100%;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.25rem 0;
 }
 
 .top-bar {
@@ -30,14 +31,14 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 1rem;
+  grid-template-columns: 1fr 260px;
+  gap: 0.75rem;
 }
 
 .board {
   background: #0d5f42;
   border-radius: 14px;
-  padding: 0.75rem;
+  padding: 0.5rem;
   outline: none;
   user-select: none;
   -webkit-user-select: none;
@@ -152,17 +153,28 @@
 
 .columns {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 0.4rem;
-  min-height: 640px;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 0.2rem;
+  min-height: 540px;
+}
+
+/*
+ * Card sizes are in cqi (percent of the card's width), so cards grow with the column.
+ * The drag layer is a container too, sized to one card, so dragged cards match.
+ */
+.column,
+.drag-layer {
+  container-type: inline-size;
+  --card-height: 125cqi;
+  /* Visible top strip of an overlapped card: room for the rank and corner suit. */
+  --card-strip: max(34px, 35cqi);
 }
 
 .column {
   background: rgba(255, 255, 255, 0.12);
   border: 2px solid transparent;
   border-radius: 10px;
-  padding: 0.3rem;
-  min-height: 620px;
+  padding: 0.15rem;
 }
 
 .column-number {
@@ -200,7 +212,7 @@
 }
 
 .card-slot + .card-slot {
-  margin-top: -50px;
+  margin-top: calc(var(--card-strip) - var(--card-height));
 }
 
 .card-slot.movable {
@@ -213,7 +225,7 @@
 
 .card {
   width: 100%;
-  height: 90px;
+  height: var(--card-height);
   border-radius: 10px;
   border: 2px solid rgba(0, 0, 0, 0.45);
   display: block;
@@ -238,7 +250,7 @@
 }
 
 .card .rank {
-  font-size: 2rem;
+  font-size: clamp(1.9rem, 30cqi, 2.8rem);
   position: absolute;
   top: 0.2rem;
   left: 0.3rem;
@@ -247,7 +259,7 @@
 
 /* Suit in the top-right corner so it stays visible when the card is overlapped in a column. */
 .card .corner-suit {
-  font-size: 1.3rem;
+  font-size: clamp(1.3rem, 22cqi, 2rem);
   position: absolute;
   top: 0.3rem;
   right: 0.2rem;
@@ -262,7 +274,7 @@
 }
 
 .card .suit {
-  font-size: 2.8rem;
+  font-size: clamp(2.6rem, 46cqi, 4.2rem);
   position: absolute;
   right: 0.4rem;
   bottom: 0.2rem;
@@ -342,10 +354,20 @@
   margin-bottom: 0.7rem;
 }
 
+aside > :last-child {
+  margin-bottom: 0;
+}
+
 .settings-panel h2,
 .keys-panel h2,
 .stats-panel h2 {
-  margin-top: 0;
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.keys-panel p,
+.stats-panel p {
+  margin: 0.25rem 0;
 }
 
 .settings-panel label {
