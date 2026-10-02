@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { SpiderMode } from '../game/types'
 import type { DeckTheme } from '../themes/lowVisionDeck'
 
@@ -17,6 +18,44 @@ interface SettingsPanelProps {
   mode: SpiderMode
   onModeChange: (mode: SpiderMode) => void
   onChange: (update: Partial<GameSettings>) => void
+}
+
+/**
+ * The whole app, this slider included, is transform-scaled, so rescaling mid-drag moves the
+ * thumb out from under the pointer and the value jumps around. The drag is tracked here and
+ * only applied by the native change event, which fires on release (and on each click or
+ * arrow key, so those still apply at once).
+ */
+function ScaleSlider({ value, onCommit }: { value: number; onCommit: (scale: number) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [draft, setDraft] = useState<number | null>(null)
+  const shown = draft ?? value
+
+  useEffect(() => {
+    const input = inputRef.current
+    if (!input) return
+    const commit = () => {
+      onCommit(Number(input.value))
+      setDraft(null)
+    }
+    input.addEventListener('change', commit)
+    return () => input.removeEventListener('change', commit)
+  }, [onCommit])
+
+  return (
+    <label>
+      UI scale ({Math.round(shown * 100)}%)
+      <input
+        ref={inputRef}
+        type="range"
+        min={0.8}
+        max={1.6}
+        step={0.05}
+        value={shown}
+        onChange={(event) => setDraft(Number(event.target.value))}
+      />
+    </label>
+  )
 }
 
 export function SettingsPanel({ settings, themes, mode, onModeChange, onChange }: SettingsPanelProps) {
@@ -48,17 +87,7 @@ export function SettingsPanel({ settings, themes, mode, onModeChange, onChange }
         </select>
       </label>
 
-      <label>
-        UI scale ({Math.round(settings.scale * 100)}%)
-        <input
-          type="range"
-          min={0.8}
-          max={1.6}
-          step={0.05}
-          value={settings.scale}
-          onChange={(event) => onChange({ scale: Number(event.target.value) })}
-        />
-      </label>
+      <ScaleSlider value={settings.scale} onCommit={(scale) => onChange({ scale })} />
 
       <label className="toggle">
         <input
