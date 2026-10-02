@@ -251,6 +251,9 @@
 
 .card .rank {
   font-size: clamp(2.2rem, 47cqi, 4rem);
+  font-weight: 700;
+  /* Serif with full-height (lining) numerals; Georgia's old-style 3/4/5/7/9 dip below the line. */
+  font-family: Charter, "Bitstream Charter", "DejaVu Serif", "Noto Serif", "Times New Roman", serif;
   position: absolute;
   top: 0.2rem;
   left: 0.3rem;
