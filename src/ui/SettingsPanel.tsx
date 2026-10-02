@@ -21,10 +21,9 @@ interface SettingsPanelProps {
 }
 
 /**
- * The whole app, this slider included, is transform-scaled, so rescaling mid-drag moves the
- * thumb out from under the pointer and the value jumps around. The drag is tracked here and
- * only applied by the native change event, which fires on release (and on each click or
- * arrow key, so those still apply at once).
+ * Rescaling restyles the whole board, so the drag is tracked here and only applied by the
+ * native change event, which fires on release (and on each click or arrow key, so those still
+ * apply at once). This also kept the thumb steady back when the slider sat inside the scaled area.
  */
 function ScaleSlider({ value, onCommit }: { value: number; onCommit: (scale: number) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)

@@ -52,6 +52,23 @@ interface DragRender {
 const DRAG_THRESHOLD_PX = 6
 const TOTAL_BOOKS = 8
 
+// Card proportions, as fractions of card width; keep in step with --card-height and --card-strip in App.css.
+const CARD_HEIGHT = 1.28
+const CARD_STRIP = 0.5
+const CARD_STRIP_MIN_PX = 42
+/** Space kept free under the columns (board padding, page padding). */
+const BOTTOM_GAP_PX = 24
+/** Below this the cards would be unreadable; let the page scroll instead. */
+const MIN_CARD_WIDTH_PX = 64
+
+/** Widest card for which a column of `longest` cards fits in `available` pixels of height. */
+function fitCardWidth(available: number, longest: number): number {
+  const overlaps = Math.max(0, longest - 1)
+  const proportional = available / (overlaps * CARD_STRIP + CARD_HEIGHT)
+  const width = proportional * CARD_STRIP >= CARD_STRIP_MIN_PX ? proportional : (available - overlaps * CARD_STRIP_MIN_PX) / CARD_HEIGHT
+  return Math.max(MIN_CARD_WIDTH_PX, Math.floor(width))
+}
+
 function sameRef(a: CardRef | null | undefined, b: CardRef): boolean {
   return Boolean(a && a.column === b.column && a.cardIndex === b.cardIndex)
 }
@@ -100,6 +117,7 @@ export function Board({
   onEscape,
 }: BoardProps) {
   const columnRefs = useRef<(HTMLDivElement | null)[]>([])
+  const columnsRef = useRef<HTMLDivElement | null>(null)
   const layerRef = useRef<HTMLDivElement | null>(null)
   const tracking = useRef<DragTracking | null>(null)
   const [drag, setDrag] = useState<DragRender | null>(null)
@@ -113,6 +131,25 @@ export function Board({
     if (!track || !layer) return
     layer.style.transform = `translate(${clientX - track.offsetX}px, ${clientY - track.offsetY}px) scale(${track.scale})`
   }
+
+  // Size cards so the longest column fits on screen: as large as the column allows while columns are short,
+  // shrinking only as one grows. Written straight to a CSS variable so it doesn't cost a re-render.
+  const longest = Math.max(1, ...game.columns.map((column) => column.length))
+  useLayoutEffect(() => {
+    function fit(): void {
+      const columns = columnsRef.current
+      const cards = columns?.querySelector('.column-cards')
+      if (!columns || !cards) return
+      const rect = columns.getBoundingClientRect()
+      // The app shell may be transform-scaled (UI scale); work in unscaled CSS pixels.
+      const scale = columns.offsetWidth > 0 ? rect.width / columns.offsetWidth : 1
+      const available = (window.innerHeight - cards.getBoundingClientRect().top) / scale - BOTTOM_GAP_PX
+      columns.style.setProperty('--fit-width', `${fitCardWidth(available, longest)}px`)
+    }
+    fit()
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  })
 
   // The drag layer mounts one render after the drag starts; place it where the pointer already is.
   useLayoutEffect(() => {
@@ -272,11 +309,7 @@ export function Board({
         </div>
       </header>
 
-      <p className={`board-banner ${feedback ? feedback.kind : ''}`} role="status" aria-live="polite">
-        {feedback?.message ?? ''}
-      </p>
-
-      <div className="columns">
+      <div className="columns" ref={columnsRef}>
         {game.columns.map((column, columnIndex) => {
           const isHintTarget = hint?.toColumn === columnIndex
           const isDropTarget = dropTarget === columnIndex && drag?.from.column !== columnIndex
@@ -301,42 +334,44 @@ export function Board({
               <div className="column-number" aria-hidden="true">
                 {columnIndex + 1}
               </div>
-              {column.map((card, cardIndex) => {
-                const ref = { column: columnIndex, cardIndex }
-                if (!card.faceUp) {
+              <div className="column-cards">
+                {column.map((card, cardIndex) => {
+                  const ref = { column: columnIndex, cardIndex }
+                  if (!card.faceUp) {
+                    return (
+                      <div key={card.id} className="card-slot">
+                        <div className="card card-back" style={{ background: theme.backBg }} />
+                      </div>
+                    )
+                  }
+                  const isSelected = selected && selected.column === columnIndex && cardIndex >= selected.cardIndex
+                  const isHintSource = hint && hint.fromColumn === columnIndex && cardIndex >= hint.cardIndex
+                  const isDragged = drag && drag.from.column === columnIndex && cardIndex >= drag.from.cardIndex
+                  const isShaking = feedback?.card && sameRef(feedback.card, ref)
+                  const isCursor = isCursorColumn && Math.min(cursor.cardIndex, column.length - 1) === cardIndex
                   return (
-                    <div key={card.id} className="card-slot">
-                      <div className="card card-back" style={{ background: theme.backBg }} />
+                    <div
+                      key={isShaking ? `${card.id}-${feedback.nonce}` : card.id}
+                      className={[
+                        'card-slot',
+                        isSelected ? 'selected' : '',
+                        isHintSource ? 'hint-source' : '',
+                        isDragged ? 'dragging' : '',
+                        isShaking ? 'shake' : '',
+                        isCursor ? 'cursor' : '',
+                        isMovableSequence(column, cardIndex) ? 'movable' : '',
+                      ].join(' ')}
+                      onPointerDown={(event) => handlePointerDown(event, ref)}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerCancel}
+                      onDoubleClick={() => onCardDoubleClick(ref)}
+                    >
+                      <CardFace card={card} theme={theme} />
                     </div>
                   )
-                }
-                const isSelected = selected && selected.column === columnIndex && cardIndex >= selected.cardIndex
-                const isHintSource = hint && hint.fromColumn === columnIndex && cardIndex >= hint.cardIndex
-                const isDragged = drag && drag.from.column === columnIndex && cardIndex >= drag.from.cardIndex
-                const isShaking = feedback?.card && sameRef(feedback.card, ref)
-                const isCursor = isCursorColumn && Math.min(cursor.cardIndex, column.length - 1) === cardIndex
-                return (
-                  <div
-                    key={isShaking ? `${card.id}-${feedback.nonce}` : card.id}
-                    className={[
-                      'card-slot',
-                      isSelected ? 'selected' : '',
-                      isHintSource ? 'hint-source' : '',
-                      isDragged ? 'dragging' : '',
-                      isShaking ? 'shake' : '',
-                      isCursor ? 'cursor' : '',
-                      isMovableSequence(column, cardIndex) ? 'movable' : '',
-                    ].join(' ')}
-                    onPointerDown={(event) => handlePointerDown(event, ref)}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerCancel}
-                    onDoubleClick={() => onCardDoubleClick(ref)}
-                  >
-                    <CardFace card={card} theme={theme} />
-                  </div>
-                )
-              })}
+                })}
+              </div>
             </div>
           )
         })}

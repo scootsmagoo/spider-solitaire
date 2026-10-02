@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { applyMove, canDealFromStock, canMove, cardLabel, createGame, dealFromStock, isMovableSequence } from './game/engine'
 import { bestDestination, bestHint } from './game/hints'
@@ -80,6 +80,13 @@ function App() {
   const [hintVisible, setHintVisible] = useState(false)
   const [feedback, setFeedback] = useState<BoardFeedback | null>(null)
   const [tick, setTick] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+
+  function closeMenu(): void {
+    setMenuOpen(false)
+    menuButtonRef.current?.focus()
+  }
 
   useEffect(() => {
     if (game.wonAt !== null) return
@@ -286,6 +293,10 @@ function App() {
 
   useEffect(() => {
     function onKeyDown(event: globalThis.KeyboardEvent): void {
+      if (menuOpen) {
+        if (event.key === 'Escape') closeMenu()
+        return
+      }
       const target = event.target as HTMLElement | null
       if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
       const modifier = event.ctrlKey || event.metaKey
@@ -309,36 +320,47 @@ function App() {
   return (
     <main
       className={`app-shell ${settings.highContrast ? 'high-contrast' : ''} ${settings.reducedMotion ? 'reduced-motion' : ''}`}
-      style={{ transform: `scale(${settings.scale})`, transformOrigin: 'top center' }}
     >
-      <header className="top-bar">
-        <h1>Simple Spider Solitaire</h1>
-        <div className="meta">
-          <span>{isElectronRuntime() ? 'Desktop' : 'Browser'} mode</span>
-          <span>Time: {elapsed}s</span>
-          <span>Moves: {game.moves}</span>
-        </div>
-      </header>
+      <div className="app-content" style={{ transform: `scale(${settings.scale})`, transformOrigin: 'top center' }}>
+        <header className="toolbar">
+          <h1 className="visually-hidden">Simple Spider Solitaire</h1>
+          <div className="controls">
+            <button type="button" onClick={() => startNewGame(mode, true)}>
+              New Game
+            </button>
+            <button type="button" onClick={() => startNewGame(mode, false)}>
+              Restart
+            </button>
+            <button type="button" onClick={undo} disabled={history.length === 0}>
+              Undo
+            </button>
+            <button type="button" onClick={redo} disabled={future.length === 0}>
+              Redo
+            </button>
+            <button type="button" onClick={showHint}>
+              Hint
+            </button>
+          </div>
+          {/* Hints, invalid-move reasons and the win message. */}
+          <p className={`message ${feedback ? feedback.kind : ''}`} role="status" aria-live="polite">
+            {feedback?.message ?? ''}
+          </p>
+          <div className="meta">
+            <span>Time: {elapsed}s</span>
+            <span>Moves: {game.moves}</span>
+          </div>
+          <button
+            type="button"
+            className="menu-button"
+            ref={menuButtonRef}
+            aria-expanded={menuOpen}
+            aria-controls="side-menu"
+            onClick={() => setMenuOpen(true)}
+          >
+            ☰ Menu
+          </button>
+        </header>
 
-      <section className="controls">
-        <button type="button" onClick={() => startNewGame(mode, true)}>
-          New Game
-        </button>
-        <button type="button" onClick={() => startNewGame(mode, false)}>
-          Restart
-        </button>
-        <button type="button" onClick={undo} disabled={history.length === 0}>
-          Undo
-        </button>
-        <button type="button" onClick={redo} disabled={future.length === 0}>
-          Redo
-        </button>
-        <button type="button" onClick={showHint}>
-          Hint
-        </button>
-      </section>
-
-      <div className="layout">
         <Board
           game={game}
           theme={shownTheme}
@@ -352,27 +374,41 @@ function App() {
           onDealStock={dealStock}
           onEscape={() => setSelected(null)}
         />
-        <aside>
-          <SettingsPanel
-            settings={settings}
-            themes={deckThemes}
-            mode={mode}
-            onModeChange={(nextMode) => startNewGame(nextMode, true)}
-            onChange={(update) => setSettings((prev) => ({ ...prev, ...update }))}
-          />
-          <section className="stats-panel">
-            <h2>Stats</h2>
-            <p>Wins: {stats.wins}</p>
-            <p>Losses: {stats.losses}</p>
-            <p>Best Time: {stats.bestTimeSeconds === null ? 'N/A' : `${stats.bestTimeSeconds}s`}</p>
-          </section>
-          <section className="keys-panel">
-            <h2>Keys</h2>
-            <p>Arrows move, Enter picks up / drops, Esc cancels</p>
-            <p>H hint · D deal · Ctrl+Z undo · Ctrl+Y redo</p>
-          </section>
-        </aside>
       </div>
+
+      {/* Settings, stats and keys live in a panel that slides over the board, so the cards get the full width. */}
+      {menuOpen && (
+        <>
+          <div className="menu-backdrop" onClick={closeMenu} aria-hidden="true" />
+          <aside id="side-menu" className="side-menu" aria-label="Menu">
+            <div className="side-menu-header">
+              <h2>Menu</h2>
+              <button type="button" onClick={closeMenu} autoFocus>
+                ✕ Close
+              </button>
+            </div>
+            <SettingsPanel
+              settings={settings}
+              themes={deckThemes}
+              mode={mode}
+              onModeChange={(nextMode) => startNewGame(nextMode, true)}
+              onChange={(update) => setSettings((prev) => ({ ...prev, ...update }))}
+            />
+            <section className="stats-panel">
+              <h2>Stats</h2>
+              <p>Wins: {stats.wins}</p>
+              <p>Losses: {stats.losses}</p>
+              <p>Best Time: {stats.bestTimeSeconds === null ? 'N/A' : `${stats.bestTimeSeconds}s`}</p>
+              <p>Running in {isElectronRuntime() ? 'the desktop app' : 'the browser'}</p>
+            </section>
+            <section className="keys-panel">
+              <h2>Keys</h2>
+              <p>Arrows move, Enter picks up / drops, Esc cancels</p>
+              <p>H hint · D deal · Ctrl+Z undo · Ctrl+Y redo</p>
+            </section>
+          </aside>
+        </>
+      )}
     </main>
   )
 }
