@@ -1,5 +1,7 @@
 # Simple Spider Solitaire
 
+**▶ Play it in your browser: https://scootsmagoo.github.io/spider-solitaire/**
+
 Accessible Spider Solitaire for your mom, built to run in two ways:
 
 - as an installable Linux desktop app
@@ -42,6 +44,9 @@ Web build:
 ```bash
 npm run build:web
 ```
+
+Every push to `master` runs the tests, builds the web version, and publishes it to
+[GitHub Pages](https://scootsmagoo.github.io/spider-solitaire/) (see `.github/workflows/pages.yml`).
 
 Desktop build artifacts:
 
