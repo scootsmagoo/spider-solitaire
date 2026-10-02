@@ -344,7 +344,7 @@ function App() {
           </div>
           {/* Hints, invalid-move reasons and the win message. */}
           <p className={`message ${feedback ? feedback.kind : ''}`} role="status" aria-live="polite">
-            {feedback?.message ?? ''}
+            {feedback && <span>{feedback.message}</span>}
           </p>
           <div className="meta">
             <span>Time: {elapsed}s</span>

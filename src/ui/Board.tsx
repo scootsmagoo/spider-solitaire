@@ -55,7 +55,6 @@ const TOTAL_BOOKS = 8
 // Card proportions, as fractions of card width; keep in step with --card-height and --card-strip in App.css.
 const CARD_HEIGHT = 1.28
 const CARD_STRIP = 0.5
-const CARD_STRIP_MIN_PX = 42
 /** Space kept free under the columns (board padding, page padding). */
 const BOTTOM_GAP_PX = 24
 /** Below this the cards would be unreadable; let the page scroll instead. */
@@ -64,9 +63,7 @@ const MIN_CARD_WIDTH_PX = 64
 /** Widest card for which a column of `longest` cards fits in `available` pixels of height. */
 function fitCardWidth(available: number, longest: number): number {
   const overlaps = Math.max(0, longest - 1)
-  const proportional = available / (overlaps * CARD_STRIP + CARD_HEIGHT)
-  const width = proportional * CARD_STRIP >= CARD_STRIP_MIN_PX ? proportional : (available - overlaps * CARD_STRIP_MIN_PX) / CARD_HEIGHT
-  return Math.max(MIN_CARD_WIDTH_PX, Math.floor(width))
+  return Math.max(MIN_CARD_WIDTH_PX, Math.floor(available / (overlaps * CARD_STRIP + CARD_HEIGHT)))
 }
 
 function sameRef(a: CardRef | null | undefined, b: CardRef): boolean {

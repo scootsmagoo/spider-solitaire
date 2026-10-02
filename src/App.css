@@ -13,13 +13,15 @@
   white-space: nowrap;
 }
 
-/* One slim row: game buttons, the current message, time/moves, and the menu button. */
+/*
+ * Game buttons, the current message, time/moves, and the menu button: one row when it fits,
+ * wrapping onto more rows in narrow windows or at large button sizes.
+ */
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  /* Fixed height so a two-line message never shifts the board (and resizes the cards). */
-  height: 3.4em;
+  gap: 0.4em 0.75em;
   margin-bottom: 0.4rem;
 }
 
@@ -30,21 +32,28 @@
 
 .controls {
   display: flex;
-  gap: 0.5rem;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 0.5em;
 }
 
+/* Takes the space left in the row, or a row of its own when less than ~18em is left. */
 .message {
-  flex: 1;
+  flex: 1 1 18em;
   min-width: 0;
-  max-height: 100%;
+  /* Fixed height, shown or not, so a message appearing never shifts the board (and resizes the cards). */
+  height: 3em;
   margin: 0;
-  padding: 0.25em 0.8em;
+  padding: 0 0.8em;
   border-radius: 8px;
   font-size: 1.05em;
   font-weight: 700;
   line-height: 1.25;
   color: #fff;
+  display: flex;
+  align-items: center;
+}
+
+.message > span {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -72,10 +81,10 @@
 
 .meta {
   display: flex;
-  gap: 1rem;
+  gap: 1em;
+  margin-left: auto;
   font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .menu-button {
@@ -225,7 +234,7 @@
   container-type: inline-size;
   --card-height: 128cqi;
   /* Visible top strip of an overlapped card: room for the rank and corner suit. */
-  --card-strip: max(42px, 50cqi);
+  --card-strip: 50cqi;
 }
 
 .column {
@@ -310,7 +319,7 @@
 }
 
 .card .rank {
-  font-size: clamp(2.2rem, 47cqi, 4rem);
+  font-size: min(47cqi, 4rem);
   font-weight: 700;
   /* Serif with full-height (lining) numerals; Georgia's old-style 3/4/5/7/9 dip below the line. */
   font-family: Charter, "Bitstream Charter", "DejaVu Serif", "Noto Serif", "Times New Roman", serif;
@@ -323,7 +332,7 @@
 
 /* Suit in the top-right corner so it stays visible when the card is overlapped in a column. */
 .card .corner-suit {
-  font-size: clamp(1.3rem, 30cqi, 2.6rem);
+  font-size: min(30cqi, 2.6rem);
   position: absolute;
   top: 0.3rem;
   right: 0.2rem;
@@ -350,7 +359,7 @@
 
 /* Big suit centred in the part of the card below the rank strip. */
 .card .suit {
-  font-size: clamp(3rem, 82cqi, 6.5rem);
+  font-size: min(82cqi, 6.5rem);
   position: absolute;
   top: var(--card-strip);
   right: 0;
