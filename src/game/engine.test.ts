@@ -13,7 +13,8 @@ describe('spider engine', () => {
     expect(game.stock).toHaveLength(5)
     expect(game.columns[0]).toHaveLength(6)
     expect(game.columns[4]).toHaveLength(5)
-    expect(game.columns.every((column) => column[column.length - 1].faceUp)).toBe(true)
+    expect(game.columns.every((column) => column.every((card) => card.faceUp))).toBe(true)
+    expect(game.stock.flat().every((card) => !card.faceUp)).toBe(true)
   })
 
   it('only moves valid same-suit sequences', () => {

@@ -38,14 +38,17 @@ const defaultStats: Stats = {
 
 function normalizeSavedGame(saved: GameState | null, mode: SpiderMode): GameState {
   if (!saved) return createGame(mode)
+  // Games saved before the tableau was dealt fully face up still have hidden cards; turn them over.
+  const columns = saved.columns.map((column) => column.map((card) => (card.faceUp ? card : { ...card, faceUp: true })))
   if (!Array.isArray(saved.completedBooks)) {
     const fallbackSuit: Suit = 'spades'
     return {
       ...saved,
+      columns,
       completedBooks: Array.from({ length: saved.completedRuns }, () => fallbackSuit),
     }
   }
-  return saved
+  return { ...saved, columns }
 }
 
 function describeCard(game: GameState, ref: CardRef): string {

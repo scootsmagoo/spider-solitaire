@@ -55,9 +55,10 @@ function dealInitialColumns(deck: Card[]): Card[][] {
       if (!card) {
         throw new Error('Deck underflow while dealing columns')
       }
+      // Every card in the tableau is dealt face up; only the stock stays hidden.
+      card.faceUp = true
       columns[column].push(card)
     }
-    columns[column][columns[column].length - 1].faceUp = true
   }
   return columns
 }
