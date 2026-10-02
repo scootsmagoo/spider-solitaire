@@ -241,8 +241,24 @@
   font-size: 2rem;
   position: absolute;
   top: 0.2rem;
-  left: 0.4rem;
+  left: 0.3rem;
   line-height: 1;
+}
+
+/* Suit in the top-right corner so it stays visible when the card is overlapped in a column. */
+.card .corner-suit {
+  font-size: 1.3rem;
+  position: absolute;
+  top: 0.3rem;
+  right: 0.2rem;
+  line-height: 1;
+}
+
+/* Two digits plus the corner suit only just fit in a narrow column. */
+.card .rank-ten {
+  letter-spacing: -0.06em;
+  transform: scaleX(0.8);
+  transform-origin: left top;
 }
 
 .card .suit {
