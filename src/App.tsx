@@ -144,8 +144,9 @@ function App() {
     setFeedback({ kind, message, card, nonce: Date.now() })
   }
 
-  function startNewGame(nextMode: SpiderMode, countLoss: boolean): void {
-    if (countLoss && game.wonAt === null) {
+  /** Deals a fresh game; abandoning one that isn't won counts as a loss. */
+  function startNewGame(nextMode: SpiderMode): void {
+    if (game.wonAt === null) {
       setStats((prev) => ({ ...prev, losses: prev.losses + 1 }))
     }
     setMode(nextMode)
@@ -326,11 +327,8 @@ function App() {
         <header className="toolbar" style={{ fontSize: `${settings.scale}rem` }}>
           <h1 className="visually-hidden">Simple Spider Solitaire</h1>
           <div className="controls">
-            <button type="button" onClick={() => startNewGame(mode, true)}>
+            <button type="button" onClick={() => startNewGame(mode)}>
               New Game
-            </button>
-            <button type="button" onClick={() => startNewGame(mode, false)}>
-              Restart
             </button>
             <button type="button" onClick={undo} disabled={history.length === 0}>
               Undo
@@ -392,7 +390,7 @@ function App() {
               settings={settings}
               themes={deckThemes}
               mode={mode}
-              onModeChange={(nextMode) => startNewGame(nextMode, true)}
+              onModeChange={(nextMode) => startNewGame(nextMode)}
               onChange={(update) => setSettings((prev) => ({ ...prev, ...update }))}
             />
             <section className="stats-panel">
